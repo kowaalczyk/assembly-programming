@@ -1,0 +1,7 @@
+*.o
+examples/64/trzy
+examples/64/array_sum
+examples/64/array_sum_sse
+examples/64/quad_roots
+examples/64/dmax
+examples/64/quad_roots_sse
