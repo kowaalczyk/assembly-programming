@@ -23,7 +23,7 @@ for test_in in "$test_dir"/*.in; do
 
   # simulate the game
   set +e
-  ./conway-test < "$infile" > "$realout" 2>> "$logfile"
+  ./conway-test < "$infile" > "$realout" 2> "$logfile"
   retval=$?
   set -e
 

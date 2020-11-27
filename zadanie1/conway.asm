@@ -60,53 +60,108 @@ run:
             mov rdx, [fields]       ; rdx = pointer to first field
             add rdx, rax            ; rdx = pointer to the current cell
 
-            .left:
-                cmp r11, 0
-                je .top ; address before first row
-
-                mov r8b, byte [rdx - 1] ; previous col, same row
-                and r8b, 15
-                add rdi, r8
-
-            .top:
+            .above:
                 cmp r10, 0
-                je .right ; address before first row
+                je .current ; first row, no top neighbours
 
                 mov rax, rdx
                 sub rax, rsi
-                mov r8b, byte [rax] ; same col, previous row
-                and r8b, 15
-                add rdi, r8
+                dec rax ; rax = top left neighbour
 
-            .right:
-                lea r9, [r11 + 1]
-                cmp r9, rsi
-                je .bottom ; address after last column (rsi == width)
+                .aboveleft:
+                    cmp r11, 0
+                    je .abovemiddle ; first column, no top left neighbour
 
-                mov r8b, byte [rdx + 1] ; next col, same row
-                and r8b, 15
-                add rdi, r8
+                    mov r8b, byte [rax]
+                    and r8b, 15 ; only count the 4 rightmost bits
+                    add rdi, r8
 
-            .bottom:
+                .abovemiddle:
+                    inc rax ; if we're here, middle top neighbour has to exist
+                    mov r8b, byte [rax]
+                    and r8b, 15
+                    add rdi, r8
+
+                .aboveright:
+                    lea r9, [r11 + 1]
+                    cmp r9, rsi
+                    je .current ; last column, no top right neighbour
+
+                    inc rax
+                    mov r8b, byte [rax]
+                    and r8b, 15
+                    add rdi, r8
+
+            .current:
+                .currentleft:
+                    cmp r11, 0
+                    je .currentright ; first column, skip left neighbour
+
+                    lea rax, [rdx - 1]
+                    mov r8b, byte [rax]
+                    and r8b, 15
+                    add rdi, r8
+
+                .currentright:
+                    lea r9, [r11 + 1]
+                    cmp r9, rsi
+                    je .below ; last column, skip right neighbour
+
+                    lea rax, [rdx + 1]
+                    mov r8b, byte [rax]
+                    and r8b, 15
+                    add rdi, r8
+
+            .below:
                 lea r9, [r10 + 1]
                 cmp r9, r12
                 je .update ; address after last row (r12 == height)
 
                 mov rax, rdx
                 add rax, rsi
-                mov r8b, byte [rax] ; same col, next row
-                and r8b, 15
-                add rdi, r8
+                dec rax ; rax = bottom left neighbour
+
+                .belowleft:
+                    cmp r11, 0
+                    je .belowmiddle
+
+                    mov r8b, byte [rax]
+                    and r8b, 15
+                    add rdi, r8
+
+                .belowmiddle:
+                    inc rax
+                    mov r8b, byte [rax]
+                    and r8b, 15
+                    add rdi, r8
+
+                .belowright:
+                    lea r9, [r11 + 1]
+                    cmp r9, rsi
+                    je .update
+
+                    inc rax
+                    mov r8b, byte [rax]
+                    and r8b, 15
+                    add rdi, r8
 
             .update:
-                ; current cell: if (count == 3) then [01|XX] else [00|XX]
-                cmp rdi, 3
-                jne .complete_loop
-
-                ; TODO: try movc later to see if it improves speed (1 less jump)
                 mov r8b, byte [rdx] ; r8 = [0000|000X]
-                or r8b, 16   ; r8 = [0001|000X]
-                mov byte [rdx], r8b
+
+                cmp rdi, 3
+                je .set_live ; any cell that has 3 neighbours
+
+                add rdi, r8
+                cmp rdi, 3
+                je .set_live ; live cell that has 2 neighbours
+
+                ; cell dies: has <2 or >=4 neighbours, or 2 neighbours and is dead
+                jmp .complete_loop
+
+                .set_live:
+                    or r8b, 16   ; r8 = [0001|000X]
+                    mov byte[rdx], r8b
+                    ; TODO: consider using CMOV instruction for speed
 
             .complete_loop: ; complete column loop
             inc r11

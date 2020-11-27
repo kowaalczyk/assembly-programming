@@ -7,3 +7,5 @@ examples/64/dmax
 examples/64/quad_roots_sse
 zadanie1/conway
 zadanie1/conway-test
+*.realout
+*.log
