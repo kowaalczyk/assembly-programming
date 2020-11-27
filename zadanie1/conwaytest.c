@@ -1,5 +1,5 @@
 /**
- * Main executable for running Conway's Game of Life simulations.
+ * Executable with arguments allowing for easier testing.
  *
  * (c) Krzysztof Kowalczyk 2020 kk385830@students.mimuw.edu.pl
  */
@@ -24,56 +24,44 @@ void exit_error(const char* msg, short exit_code) {
     exit(exit_code);
 }
 
-/// prints human-friendly representation of the board
+/// machine-readable version more useful for testing
 void print_game_state(const int width, const int height, const char* fields) {
     int row, col;
 
-    printf("/");
-    for (col = 0; col < width; col++) {
-        printf("-");
-    }
-    printf("\\\n");
-
     for (row = 0; row < height; row++) {
-        printf("|");
         for (col = 0; col < width; col++) {
             if (fields[row*width + col] == (char)1) {
-                printf("X");
+                printf("1");
             } else {
+                printf("0");
+            }
+            if (col != width - 1) {
                 printf(" ");
             }
         }
-        printf("|\n");
+        printf("\n");
     }
-
-    printf("\\");
-    for (col = 0; col < width; col++) {
-        printf("-");
-    }
-    printf("/\n\n");
 }
 
 /**
  * First line of input:
- * width, height of the game world
+ * width, height, steps to simulate
  *
  * Next `height` lines:
  * each line has `width` space-separated digits (0 or 1)
- * representing initial state of the game
+ * representing initial state
  *
  * Output:
- * after each step of the simulation, the number of total steps and the result
- * are printed (X denoting a live cell, blank space a dead one).
- *
- * Use Ctrl+C to quit the game.
+ * final state (after simulating specified number of steps),
+ * in the same representation as input state.
  */
 int main() {
-    int height, width, row, col, result, line_size;
+    int height, width, row, col, result, line_size, steps;
 
-    // load height and width
-    result = scanf("%d %d\n", &width, &height);
-    if (result != 2) {
-        exit_error("Invalid read: expected 2 items in the first line", 2);
+    // load height, width and number of steps
+    result = scanf("%d %d %d\n", &width, &height, &steps);
+    if (result != 3) {
+        exit_error("Invalid read: expected 3 items in the first line", 2);
     }
 
     // allocate memory for all fields
@@ -102,15 +90,8 @@ int main() {
 
     // initialize and run the game
     start(width, height, fields);
-    int step = 0;
-    while (TRUE) {
-        run(1);
-        sleep(1);
-
-        step++;
-        printf("Current step: %d\n", step);
-        print_game_state(width, height, fields);
-    }
+    run(steps);
+    print_game_state(width, height, fields);
 
     return 0;
 }

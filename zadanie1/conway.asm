@@ -34,9 +34,20 @@ run:
 ; body - arguments: rdi - number of steps to run
     mov rsi, [width]        ; rsi = width
     mov r12, [height]       ; r12 = height
-    mov rcx, rdi            ; counter for loop instruction
-.step:
 
+    ; edge case: 0 steps
+    cmp rdi, 0
+    je .epilogue
+
+    mov rcx, rdi            ; counter for the main loop
+.step:
+    ; edge case: empty game
+    cmp rsi, 0
+    je .count_step
+    cmp r12, 0
+    je .count_step
+
+    ; start actual loop
     xor r10, r10            ; r10 = row index
     .set_row:               ; row loop
 
@@ -112,6 +123,7 @@ run:
 
     mov rax, r12            ; height
     mul rsi                 ; [rdx|rax] = rsi * rax = width * height
+    mov rdx, [fields]
     lea rax, [rdx + rax]    ; rax = 1 cell after last field
     .refresh:
         dec rax
@@ -122,12 +134,13 @@ run:
         cmp rax, rdx        ; check if rax reached the first field
         jne .refresh
 
-    dec rcx
-    cmp rcx, 0
-    jne .step
-    ; loop .step         ; equiv to: dec rcx; cmp rcx 0; jne .step TODO: figure out if loop is possible here
+    .count_step:
+        dec rcx
+        cmp rcx, 0
+        jne .step
+        ; loop .step         ; equiv to: dec rcx; cmp rcx 0; jne .step TODO: figure out if loop is possible here
 
-; epilogue
+.epilogue:
     pop r15
     pop r14
     pop r13
