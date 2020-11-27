@@ -27,9 +27,6 @@ run:
     push rbp
     mov rbp, rsp
     push r12
-    push r13
-    push r14
-    push r15
 
 ; body - arguments: rdi - number of steps to run
     mov rsi, [width]        ; rsi = width
@@ -141,9 +138,6 @@ run:
         ; loop .step         ; equiv to: dec rcx; cmp rcx 0; jne .step TODO: figure out if loop is possible here
 
 .epilogue:
-    pop r15
-    pop r14
-    pop r13
     pop r12
     pop rbp
     ret
