@@ -1,5 +1,5 @@
 /**
- * Executable with arguments allowing for easier testing.
+ * Executable with arguments and output that allow for easier testing.
  *
  * (c) Krzysztof Kowalczyk 2020 kk385830@students.mimuw.edu.pl
  */

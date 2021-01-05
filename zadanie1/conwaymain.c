@@ -1,5 +1,6 @@
 /**
- * Main executable for running Conway's Game of Life simulations.
+ * Main executable for running Conway's Game of Life step-by-step
+ * (input and output format as requested for this assignment).
  *
  * (c) Krzysztof Kowalczyk 2020 kk385830@students.mimuw.edu.pl
  */

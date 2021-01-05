@@ -9,3 +9,6 @@ zadanie1/conway
 zadanie1/conway-test
 *.realout
 *.log
+limits
+*.tar.gz
+*.tgz

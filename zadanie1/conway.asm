@@ -1,3 +1,8 @@
+; Implementation of Conway's Game of Life
+; See conwaymain.c or conwaytest.c driver programs for examples of usage.
+;
+; (c) Krzysztof Kowalczyk 2020 kk385830@students.mimuw.edu.pl
+
 section .bss
     width: resb 8   ; int (can be 64bit on a 64bit system)
     height: resb 8  ; int
@@ -26,7 +31,7 @@ run:
 ; prologue
     push rbp
     mov rbp, rsp
-    push r12
+    push r12        ; used for temporary variable, but has to be preserved
 
 ; body - arguments: rdi - number of steps to run
     mov rsi, [width]        ; rsi = width
