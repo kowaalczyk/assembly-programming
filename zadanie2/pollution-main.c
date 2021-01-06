@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <malloc.h>
+// #include <malloc.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,9 +9,84 @@ extern void step(float*);
 
 const int DEBUG=1;
 
+const int PADDING_TOP=8;  // has to be at least 5, but 8 guarantees alignment to 16bits
+const int PADDING_BOTTOM=4;  // has to be at least 1, but 4 guarantees alignment to 16bits
+const int PADDING_LEFT=1;
+
 void exit_error(const char* msg, short exit_code) {
     dprintf(2, msg);
     exit(exit_code);
+}
+
+float* read_pollution_matrix(int width, int height) {
+    int real_height = height + PADDING_TOP + PADDING_BOTTOM;
+    int real_width = width + PADDING_LEFT;
+
+    // 2x because we need to store temporary results in the second matrix
+    float* M = aligned_alloc(16, 2 * real_width * real_height * sizeof(float));
+    // float* M = calloc(2 * real_width * real_height, sizeof(float));
+    if (M == NULL) {
+        dprintf(2, "Invalid memory allocation:");
+        exit_error(strerror(errno), 1);
+    }
+    // actual matrix begins on row 5, column 1:
+    // rows [0,4] and (height) are just padding
+    // column 0 is placeholder for vector T
+    // return &M[real_height + 5];
+
+    int result;
+    for (int col_idx = 0; col_idx < width; col_idx++) {
+        for (int row_idx = 0; row_idx < height; row_idx++) {
+            int idx = real_height * (col_idx + PADDING_LEFT) + (row_idx + PADDING_TOP);
+            result = scanf("%f", &M[idx]);
+            if (result != 1) {
+                exit_error("Expected floating point number", 2);
+            }
+        }
+    }
+    return M;
+}
+
+void print_pollution_matrix(int width, int height, float* M) {
+    int real_height = (height + PADDING_TOP + PADDING_BOTTOM);
+    for (int col_idx = 0; col_idx < width; col_idx++) {
+        int translated_col = (col_idx + PADDING_LEFT) * real_height;
+        for (int row_idx = 0; row_idx < height; row_idx++) {
+            int translated_row = row_idx + PADDING_TOP;
+            printf("%f", M[translated_col + translated_row]);
+            if (col_idx != width - 1) {
+                printf(" ");
+            }
+        }
+        printf("\n");
+    }
+}
+
+void debug_print_pollution_matrix(int width, int height, float* M, const char* msg) {
+    printf("[DEBUG] '%s':\n", msg);
+
+    // print header
+    printf("TP______ ");
+    for (int col_idx = 0; col_idx < width; col_idx++) {
+        printf("M%d______ ", col_idx);
+    }
+    for (int col_idx = 0; col_idx < width; col_idx++) {
+        printf("D%d______ ", col_idx);
+    }
+    printf("\n");
+
+    // print entire matrix (TP, M and DELTA)
+    int real_height = height+PADDING_BOTTOM+PADDING_TOP;
+    for (int row_idx = 0; row_idx < real_height; row_idx++) {
+        for (int col_idx = 0; col_idx < 2*width + PADDING_LEFT; col_idx++) {
+            printf("%f", M[real_height * col_idx + row_idx]);
+            if (col_idx != 2*width) {
+                printf(" ");
+            }
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
 
 int main() {
@@ -24,22 +99,8 @@ int main() {
         exit_error("Expected 3 integers in the first line", 2);
     }
 
-    // allocate memory for the main matrix and temporary matrix
-    float* M = calloc(2 * width * height, sizeof(float));
-    if (M == NULL) {
-        dprintf(2, "Invalid memory allocation:");
-        exit_error(strerror(errno), 1);
-    }
-
-    // read initial state of the main matrix
-    for (int row_idx = 0; row_idx < height; row_idx++) {
-        for (int col_idx = 0; col_idx < width; col_idx++) {
-            result = scanf("%f", &M[height * col_idx + row_idx]);
-            if (result != 1) {
-                exit_error("Expected floating point number", 2);
-            }
-        }
-    }
+    // allocate & read matrix for pollution simulation
+    float* M = read_pollution_matrix(width, height);
 
     // read number of steps
     result = scanf("%d\n", &steps);
@@ -54,44 +115,28 @@ int main() {
         exit_error(strerror(errno), 1);
     }
 
+    if (DEBUG) debug_print_pollution_matrix(width, height, M, "BEFORE START");
+
     // initialize state of the simulation
     start(width, height, M, weight);
 
     for (int step_idx = 0; step_idx < steps; step_idx++) {
         // read incoming pollution values into buffer T
         for (int row_idx = 0; row_idx < height; row_idx++) {
-            result = scanf("%f", T + row_idx);
+            result = scanf("%f", &T[row_idx]);
             if (result != 1) {
                 exit_error("Expected floating point number", 2);
             }
         }
 
+        if (DEBUG) debug_print_pollution_matrix(width, height, M, "BEFORE STEP");
+
         // perform next step of the simulation
         step(T);
+        if (DEBUG) debug_print_pollution_matrix(width, height, M, "AFTER STEP");
 
         // print results to standard output
-        if (DEBUG) printf("Step %d - M:\n", step_idx);
-        for (int row_idx = 0; row_idx < height; row_idx++) {
-            for (int col_idx = 0; col_idx < width; col_idx++) {
-                printf("%f", M[height * col_idx + row_idx]);
-                if (col_idx != width - 1) {
-                    printf(" ");
-                }
-            }
-            printf("\n");
-        }
-        if (DEBUG) {
-            printf("Step %d - MT:\n", step_idx);
-            for (int row_idx = 0; row_idx < height; row_idx++) {
-                for (int col_idx = 0; col_idx < width; col_idx++) {
-                    printf("%f", M[height*width + height * col_idx + row_idx]);
-                    if (col_idx != width - 1) {
-                        printf(" ");
-                    }
-                }
-                printf("\n");
-            }
-        }
+        // print_pollution_matrix(width, height, M);
     }
 
     return 0;
