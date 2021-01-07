@@ -116,7 +116,21 @@ step:
     ; TODO: handle case with 2 remaining rows !!!
     jmp .calculate_deltas
 .set_masks_3: ; 3 rows remaining:
-    ; TODO: handle case with 3 remaining rows !!!
+    xorps xmm2, xmm2
+    movq xmm2, r12
+    mov r12, 0ffffffff00000000h ; TODO: test if this is actually faster than reading from memory
+    xorps xmm1, xmm1
+    movq xmm1, r12
+    unpcklps xmm1, xmm2
+    movaps xmm2, xmm1 ; F0 used below
+    andps xmm1, xmm0 ; xmm1 := weighted mask+1
+    mov r12, 0ffffffffffffffffh ; TODO: test if this is actually faster than reading from memory
+    xorps xmm3, xmm3
+    movq xmm3, r12
+    unpcklps xmm2, xmm3
+    andps xmm2, xmm0 ; xmm2 := weighted mask0
+    shufps xmm3, xmm3, 01Bh ; reverse order of floats (FF00 -> 00FF)
+    andps xmm3, xmm0 ; xmm3 := weighted mask -1
     jmp .calculate_deltas
 .set_masks_4:
     xorps xmm2, xmm2
@@ -125,8 +139,8 @@ step:
     xorps xmm1, xmm1
     movq xmm1, r12
     unpcklps xmm1, xmm2
-    andps xmm1, xmm0 ; xmm1 := weighted mask+1
     movaps xmm4, xmm1 ; xmm4 used below
+    andps xmm1, xmm0 ; xmm1 := weighted mask+1
     movaps xmm2, xmm0 ; xmm2 := weighted mask0
     mov r12, 0ffffffff00000000h
     xorps xmm3, xmm3
@@ -147,11 +161,11 @@ step:
 .calculate_deltas: ; xmm1: weighted mask0, xmm2: weighted mask+1, xmm3: weighted mask-1
     ; copy current values to xmm4 (for delta calculation) and xmm5 (where result will be stored):
     lea r11, [r9 + FLOAT_BYTES*rcx]
-    movaps xmm4, [r11] ; xmm4 := current rows in current col (src)
+    movups xmm4, [r11] ; xmm4 := current rows in current col (src) ; TODO: align and use movaps
     movaps xmm5, xmm4
     ; left delta:
     lea r11, [rsi + FLOAT_BYTES*rcx]
-    movaps xmm6, [r11] ; xmm6 := current rows in left col (src)
+    movups xmm6, [r11] ; xmm6 := current rows in left col (src) ; TODO: align and use movaps
     subps xmm6, xmm4
     mulps xmm6, xmm2 ; xmm6 := (current rows in left col - current rows in current col) * weight * mask0
     addps xmm5, xmm6 ; new value += left delta
@@ -185,7 +199,7 @@ step:
     addps xmm5, xmm6 ; new value += bottom delta
     ; apply delta:
     lea r11, [r10 + FLOAT_BYTES*rcx] ; TODO: works in memory, but not in command line
-    movaps [r11], xmm5
+    movups [r11], xmm5 ; TODO: align and use movaps
     ; reset mask settings for next row:
     xor r12, r12
     dec r12
