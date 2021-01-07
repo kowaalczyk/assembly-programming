@@ -151,15 +151,19 @@ step:
     ; ; xmm3 := [weight, weight, weight, weight] - weighted mask-1
     jmp .calculate_deltas
 .set_masks_4: ; TODO: 4 rows remaining:
+    xorps xmm1, xmm1
     movq xmm1, r12
     mov r12, 0ffffffffffffffffh ; TODO: test if this is actually faster than reading from memory
+    xorps xmm2, xmm2
     movq xmm2, r12
     unpcklps xmm1, xmm2
     andps xmm1, xmm0 ; xmm1 := weighted mask+1
+    movaps xmm2, xmm3 ; used below
     movaps xmm2, xmm0 ; xmm2 := weighted mask0
     mov r12, 000000000ffffffffh
-    movq xmm3, r12
-    unpcklps xmm2, xmm3
+    xorps xmm4, xmm4
+    movq xmm4, r12
+    unpcklps xmm3, xmm4
     andps xmm3, xmm0 ; xmm3 := weighted mask-1
     jmp .calculate_deltas
 .set_masks_standard: ; >=4 rows remaining, processing the next 4 rows only:
