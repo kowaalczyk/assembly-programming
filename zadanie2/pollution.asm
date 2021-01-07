@@ -111,9 +111,10 @@ step:
     ; lea r9, [r9 + FLOAT_BYTES] ; row0 in current col (src)
     mov r10, [DELTA]
     ; lea r10, [r10 + FLOAT_BYTES] ; row0 in current col (dest)
-    xor rcx, rcx
-    mov ecx, [height] ; row counter (inner loop)
-    add rcx, PAD_TOP
+    xor r13, r13
+    mov r13d, [height]
+    add r13, PAD_TOP ; row size for resetting inner loop
+    mov rcx, r13 ; row counter (inner loop)
     xor rax, rax
     mov eax, [width] ; column counter (outer loop)
     mov r8, [next_col_offset]
@@ -227,6 +228,8 @@ step:
 .calculate_next_column:
     ; reset mask settings for the bottom row:
     mov r12, 0ffffffff00000000h ; first rows flag for the mask
+    ; reset inner loop counter
+    mov rcx, r13
     ; move to next column
     add rsi, r8
     add r9, r8

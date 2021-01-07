@@ -35,8 +35,8 @@ float* read_pollution_matrix(int width, int height) {
     // return &M[real_height + 5];
 
     int result;
-    for (int col_idx = 0; col_idx < width; col_idx++) {
-        for (int row_idx = 0; row_idx < height; row_idx++) {
+    for (int row_idx = 0; row_idx < height; row_idx++) {
+        for (int col_idx = 0; col_idx < width; col_idx++) {
             int idx = real_height * (col_idx + PADDING_LEFT) + (row_idx + PADDING_TOP);
             result = scanf("%f", &M[idx]);
             if (result != 1) {
