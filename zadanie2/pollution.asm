@@ -72,7 +72,7 @@ step:
     shufps xmm0, xmm0, 00h  ; xmm0 := [w,w,w,w]
     ; move T to first column in matrix for nicer vectorization
     ; TODO: if we can enforce on users that row is loaded directly to that column, it would speed things up
-    xor rcx, rcx ; TODO: is it necessary?
+    xor rcx, rcx
     mov ecx, [height]
     mov rsi, [TP]
     lea r8, [rsi + PAD_TOP*FLOAT_BYTES] ; r8 := first non-placeholder position in TP
@@ -96,7 +96,7 @@ step:
     xor rax, rax
     mov eax, [width]
     mov r8, [next_col_offset]
-    mov r12, 0ffffffff00000000h ; first rows flag for the mask
+    mov r12, 000000000ffffffffh ; first rows flag for the mask
 .calculate_next_rows: ; rsi: left column (source), r9: current column (source), r10: current column (dest)
     sub rcx, 4
     ; set mask that affects weight application based on number of remaining rows:
@@ -119,18 +119,18 @@ step:
     ; TODO: handle case with 3 remaining rows !!!
     jmp .calculate_deltas
 .set_masks_4:
-    xorps xmm1, xmm1
-    movq xmm1, r12
-    mov r12, 0ffffffffffffffffh ; TODO: test if this is actually faster than reading from memory
     xorps xmm2, xmm2
     movq xmm2, r12
+    mov r12, 0ffffffffffffffffh ; TODO: test if this is actually faster than reading from memory
+    xorps xmm1, xmm1
+    movq xmm1, r12
     unpcklps xmm1, xmm2
     andps xmm1, xmm0 ; xmm1 := weighted mask+1
-    movaps xmm2, xmm3 ; used below
+    movaps xmm4, xmm1 ; xmm4 used below
     movaps xmm2, xmm0 ; xmm2 := weighted mask0
-    mov r12, 000000000ffffffffh
-    xorps xmm4, xmm4
-    movq xmm4, r12
+    mov r12, 0ffffffff00000000h
+    xorps xmm3, xmm3
+    movq xmm3, r12
     unpcklps xmm3, xmm4
     andps xmm3, xmm0 ; xmm3 := weighted mask-1
     jmp .calculate_deltas
@@ -190,11 +190,11 @@ step:
     xor r12, r12
     dec r12
     ; complete inner loop:
-    cmp rcx, ROWS_4 ; TODO: test this, works but doesn't seem right
+    cmp rcx, ROWS_4
     jg .calculate_next_rows
 .calculate_next_column:
     ; reset mask settings for the bottom row:
-    mov r12, 0ffffffff00000000h ; first rows flag for the mask
+    mov r12, 000000000ffffffffh ; first rows flag for the mask
     ; reset inner loop counter
     mov rcx, r13
     ; move to next column
@@ -203,7 +203,7 @@ step:
     add r10, r8
     dec eax
     jnz .calculate_next_rows
-    ; TODO: apply deltas to M ; r9 should now point to [DELTA]
+    ; apply deltas to M ; r9 now points to [DELTA]
     mov r10, [M]
     xor rax, rax
     mov eax, [width]
