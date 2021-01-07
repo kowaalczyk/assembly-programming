@@ -2,10 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
-# compile the testing program
-make pollution
-
 test_dir="$(pwd)/tests"
 echo "Running in:"
 echo "$test_dir"

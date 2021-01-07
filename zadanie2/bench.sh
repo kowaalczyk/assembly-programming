@@ -1,16 +1,14 @@
 #!/bin/bash
 
-# Usage:
-# LONG=1 ./bench.sh - to run all benchmarks
-# ./bench.sh - to only run quick benchmarks
-# Requirements:
-# - install hyperfine (https://github.com/sharkdp/hyperfine)
+echo "Usage:"
+echo "LONG=1 ./bench.sh - to run all benchmarks"
+echo "./bench.sh - to only run quick benchmarks"
+echo "Requirements:"
+echo "- install hyperfine (https://github.com/sharkdp/hyperfine)"
+echo ""
 
 set -euo pipefail
 IFS=$'\n\t'
-
-# compile the testing program
-make pollution
 
 test_dir="$(pwd)/bench"
 echo "Running in:"
