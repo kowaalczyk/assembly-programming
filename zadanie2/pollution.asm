@@ -97,7 +97,9 @@ step:
     xor rax, rax
     mov eax, [width]
     mov r8, [next_col_offset]
-    mov r12, 000000000ffffffffh ; first rows flag for the mask
+    xor r12, r12
+    not r12
+    shr r12, 32 ; r12 = 000000000ffffffffh - first rows flag for the mask
 .calculate_next_rows: ; rsi: left column (source), r9: current column (source), r10: current column (dest)
     sub rcx, 4
     ; set mask that affects weight application based on number of remaining rows:
@@ -131,12 +133,13 @@ step:
     movq xmm1, r12 ; xmm1 = 0100 | 1100
     shufps xmm1, xmm1, 01Bh ; xmm1 = 0010 | 0011
     andps xmm1, xmm0 ; xmm1 := weighted mask+1
-    mov r12, 0ffffffffffffffffh
+    xor r12, r12
+    not r12 ; r12 = 0ffffffffffffffffh
     xorps xmm2, xmm2
     movq xmm2, r12 ; xmm2 := 1100
     shufps xmm2, xmm2, 01Bh ; xmm2 := 0011
     andps xmm2, xmm0 ; xmm2 := weighted mask0
-    mov r12, 0000000000ffffffffh
+    shr r12, 32 ; r12 = 0000000000ffffffffh
     xorps xmm3, xmm3
     movq xmm3, r12 ; r12 := 1000
     shufps xmm3, xmm3, 01Bh ; xmm3 := 0001
@@ -145,7 +148,9 @@ step:
 .set_masks_3: ; 3 rows remaining:
     xorps xmm2, xmm2
     movq xmm2, r12
-    mov r12, 0ffffffff00000000h ; TODO: test if this is actually faster than reading from memory
+    xor r12, r12
+    not r12
+    shl r12, 32 ; r12 = 0ffffffff00000000h
     xorps xmm1, xmm1
     movq xmm1, r12
     unpcklps xmm1, xmm2
@@ -165,7 +170,9 @@ step:
     movaps xmm4, xmm1 ; xmm4 used below
     andps xmm1, xmm0 ; xmm1 := weighted mask+1
     movaps xmm2, xmm0 ; xmm2 := weighted mask0
-    mov r12, 0ffffffff00000000h
+    xor r12, r12
+    not r12
+    shl r12, 32 ; r12 = 0ffffffff00000000h
     xorps xmm3, xmm3
     movq xmm3, r12
     unpcklps xmm3, xmm4
@@ -229,7 +236,9 @@ step:
     jg .calculate_next_rows
 .calculate_next_column:
     ; reset mask settings for the bottom row:
-    mov r12, 000000000ffffffffh ; first rows flag for the mask
+    xor r12, r12
+    not r12
+    shr r12, 32 ; first rows flag for the mask
     ; reset inner loop counter
     mov rcx, r13
     ; move to next column
