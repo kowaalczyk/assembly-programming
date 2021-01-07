@@ -4,14 +4,14 @@ FLOAT_BYTES equ 4 ; float is 32bit (on students and violet01)
 INT_BYTES equ 4 ; int is 32bit (on students and violet01)
 PTR_BYTES equ 8
 
-PAD_TOP equ 8
-PAD_COL equ 12 ; PADDING_TOP + PADDING_BOTTOM
+PAD_TOP equ 5
+PAD_COL equ 6 ; PADDING_TOP + PADDING_BOTTOM
 
-ROWS_4 equ 8 ; PAD_TOP
-ROWS_3 equ 7 ; PAD_TOP - 1
-ROWS_2 equ 6 ; PAD_TOP - 2
-ROWS_1 equ 5 ; PAD_TOP - 3
-ROWS_0 equ 4 ; PAD_TOP - 4
+ROWS_4 equ 5 ; PAD_TOP
+ROWS_3 equ 4 ; PAD_TOP - 1
+ROWS_2 equ 3 ; PAD_TOP - 2
+ROWS_1 equ 2 ; PAD_TOP - 3
+ROWS_0 equ 1 ; PAD_TOP - 4
 
 section .bss
     width: resb INT_BYTES ; width of matrix M and matrix DELTA (wihtout padding)
@@ -71,7 +71,7 @@ step:
     movd xmm0, [weight]
     shufps xmm0, xmm0, 00h  ; xmm0 := [w,w,w,w]
     ; move T to first column in matrix for nicer vectorization
-    ; TODO: if we can enforce on users that row is loaded directly to that column, it would speed things up
+    ; if we could enforce users to load directly to that column, it could speed things up
     xor rcx, rcx
     mov ecx, [height]
     mov rsi, [TP]
@@ -219,7 +219,7 @@ step:
     mulps xmm6, xmm3 ; xmm6 := (rows-1 in current col - current rows in current col) * weight * mask-1
     addps xmm5, xmm6 ; new value += bottom delta
     ; apply delta:
-    lea r11, [r10 + FLOAT_BYTES*rcx] ; TODO: works in memory, but not in command line
+    lea r11, [r10 + FLOAT_BYTES*rcx]
     movups [r11], xmm5 ; TODO: align and use movaps
     ; reset mask settings for next row:
     xor r12, r12

@@ -8,8 +8,8 @@ extern void step(float*);
 
 const int DEBUG=0; // set 1 to enable additional output
 
-const int PADDING_TOP=8;  // has to be at least 5, but 8 guarantees alignment to 16bits
-const int PADDING_BOTTOM=4;  // has to be at least 1, but 4 guarantees alignment to 16bits
+const int PADDING_TOP=5;  // has to be at least 5, but 8 guarantees alignment to 16bits
+const int PADDING_BOTTOM=1;  // has to be at least 1, but 4 guarantees alignment to 16bits
 const int PADDING_LEFT=1;
 
 void exit_error(const char* msg, short exit_code) {
