@@ -113,7 +113,21 @@ step:
     ; TODO: handle case with 1 remaining row !!!
     jmp .calculate_deltas
 .set_masks_2: ; 2 rows remaining:
-    ; TODO: handle case with 2 remaining rows !!!
+    xorps xmm1, xmm1
+    ror r12, 32
+    movq xmm1, r12 ; xmm1 = 0100 | 1100
+    shufps xmm1, xmm1, 01Bh ; xmm1 = 0010 | 0011
+    andps xmm1, xmm0 ; xmm1 := weighted mask+1
+    mov r12, 0ffffffffffffffffh
+    xorps xmm2, xmm2
+    movq xmm2, r12 ; xmm2 := 1100
+    shufps xmm2, xmm2, 01Bh ; xmm2 := 0011
+    andps xmm2, xmm0 ; xmm2 := weighted mask0
+    mov r12, 0000000000ffffffffh
+    xorps xmm3, xmm3
+    movq xmm3, r12 ; r12 := 1000
+    shufps xmm3, xmm3, 01Bh ; xmm3 := 0001
+    andps xmm3, xmm0 ; xmm3 := weighted mask-1
     jmp .calculate_deltas
 .set_masks_3: ; 3 rows remaining:
     xorps xmm2, xmm2
