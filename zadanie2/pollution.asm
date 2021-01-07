@@ -62,6 +62,9 @@ step:
     push rbp
     mov rbp, rsp
 
+    push r12
+    push r13
+
 ; body - arguments - rdi: float* T
     ; load weights to memory
     xorps xmm0, xmm0
@@ -207,16 +210,19 @@ step:
     ; mov r8, [next_col_offset] ; already loaded
     mul r8 ; rax := total size of the matrix
 .move_next_batch:
-    dec rax
+    sub rax, FLOAT_BYTES
     ; copy DELTA to M
-    lea r11, [r9 + FLOAT_BYTES*r8]
+    lea r11, [r9 + rax]
     mov r11, [r11] ; load from DELTA to register
-    lea r12, [r10 + FLOAT_BYTES*r8]
-    mov [r12], r11 ; save to memory (M)
+    lea r8, [r10 + rax]
+    mov [r8], r11 ; save to memory (M)
     ; complete loop
     test rax, rax
     jne .move_next_batch
 
 ; epilogue
+    pop r13
+    pop r12
+
     pop rbp
     ret
