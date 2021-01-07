@@ -21,7 +21,7 @@ for test_in in "$test_dir"/*.in; do
   expout="${test_name}.out"
   logfile="${test_name}.log"
 
-  # simulate the game
+  # execute the program
   set +e
   ./pollution < "$infile" > "$realout" 2> "$logfile"
   retval=$?

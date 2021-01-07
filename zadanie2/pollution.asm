@@ -77,6 +77,7 @@ step:
     mov rsi, [TP]
     lea r8, [rsi + PAD_TOP*FLOAT_BYTES] ; r8 := first non-placeholder position in TP
 .copy_next_batch:
+    ; this is slightly faster than using rep movsd here (for the baseline and 1k benchmarks)
     dec rcx
     lea rdx, [rdi + FLOAT_BYTES*rcx]
     mov rdx, [rdx] ; load value from a row in T
@@ -150,9 +151,7 @@ step:
     unpcklps xmm1, xmm2
     movaps xmm2, xmm1 ; F0 used below
     andps xmm1, xmm0 ; xmm1 := weighted mask+1
-    mov r12, 0ffffffffffffffffh ; TODO: test if this is actually faster than reading from memory
-    xorps xmm3, xmm3
-    movq xmm3, r12
+    cmpeqps xmm3, xmm3 ; xmm3 := 1111
     unpcklps xmm2, xmm3
     andps xmm2, xmm0 ; xmm2 := weighted mask0
     shufps xmm3, xmm3, 01Bh ; reverse order of floats (FF00 -> 00FF)
@@ -161,9 +160,7 @@ step:
 .set_masks_4:
     xorps xmm2, xmm2
     movq xmm2, r12
-    mov r12, 0ffffffffffffffffh ; TODO: test if this is actually faster than reading from memory
-    xorps xmm1, xmm1
-    movq xmm1, r12
+    cmpeqps xmm1, xmm1 ; xmm1 := 1111
     unpcklps xmm1, xmm2
     movaps xmm4, xmm1 ; xmm4 used below
     andps xmm1, xmm0 ; xmm1 := weighted mask+1
@@ -176,10 +173,8 @@ step:
     jmp .calculate_deltas
 .set_masks_standard: ; >4 rows remaining, processing the next 4 rows only:
     xorps xmm2, xmm2
-    movq xmm2, r12
-    mov r12, 0ffffffffffffffffh ; TODO: test if this is actually faster than reading from memory
-    xorps xmm1, xmm1
-    movq xmm1, r12
+    movq xmm2, r12 ; xmm2 :=
+    cmpeqps xmm1, xmm1 ; xmm1 := 1111
     unpcklps xmm1, xmm2
     andps xmm1, xmm0 ; xmm1 := weighted mask+1
     movaps xmm2, xmm0 ; xmm2 := weighted mask0
@@ -247,9 +242,9 @@ step:
     mov r10, [M]
     xor rax, rax
     mov eax, [width]
-    ; mov r8, [next_col_offset] ; already loaded
-    mul r8 ; rax := total size of the matrix
+    mul r8 ; rax := total size of the matrix (r8 contained the single column offset)
 .move_next_batch:
+    ; this is slightly faster than using rep movsd here (for the baseline and 1k benchmarks)
     sub rax, FLOAT_BYTES
     ; copy DELTA to M
     lea r11, [r9 + rax]

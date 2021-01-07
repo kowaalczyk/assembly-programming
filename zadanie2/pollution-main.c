@@ -14,6 +14,7 @@ const int PADDING_LEFT=1;
 
 void exit_error(const char* msg, short exit_code) {
     dprintf(2, msg);
+    dprintf(2, "\n");
     exit(exit_code);
 }
 
@@ -112,8 +113,8 @@ int main() {
     }
 
     // initialize state of the simulation
+    if (DEBUG) debug_print_pollution_matrix(width, height, M, "BEFORE START");
     start(width, height, M, weight);
-    if (DEBUG) debug_print_pollution_matrix(width, height, M, "AFTER START");
 
     for (int step_idx = 0; step_idx < steps; step_idx++) {
         // read incoming pollution values into buffer T
@@ -125,11 +126,12 @@ int main() {
         }
 
         // perform next step of the simulation
+        if (DEBUG) debug_print_pollution_matrix(width, height, M, "BEFORE STEP");
         step(T);
-        if (DEBUG) debug_print_pollution_matrix(width, height, M, "AFTER STEP");
 
         // print results to standard output
         print_pollution_matrix(width, height, M);
+        if (step_idx != steps -1) printf("\n");
     }
 
     return 0;
