@@ -1,5 +1,4 @@
 #include <stdio.h>
-// #include <malloc.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +18,7 @@ void exit_error(const char* msg, short exit_code) {
 }
 
 float* read_pollution_matrix(int width, int height) {
+    // TODO: Top padding needs to be variable in order to provide the right alignment for movaps
     int real_height = height + PADDING_TOP + PADDING_BOTTOM;
     int real_width = width + PADDING_LEFT;
 

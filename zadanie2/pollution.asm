@@ -7,6 +7,12 @@ PTR_BYTES equ 8
 PAD_TOP equ 8
 PAD_COL equ 12 ; PADDING_TOP + PADDING_BOTTOM
 
+ROWS_4 equ 8 ; PAD_TOP
+ROWS_3 equ 7 ; PAD_TOP - 1
+ROWS_2 equ 6 ; PAD_TOP - 2
+ROWS_1 equ 5 ; PAD_TOP - 3
+ROWS_0 equ 4 ; PAD_TOP - 4
+
 section .bss
     width: resb INT_BYTES ; width of matrix M and matrix DELTA (wihtout padding)
     height: resb INT_BYTES ; height of matrix M aligned to multiple of 4 (wihtout padding)
@@ -45,35 +51,6 @@ start:
     mul rcx
     lea r8, [r8 + rax]
     mov [DELTA], r8
-    ; movd [weight], xmm0
-    ; mov [width], edi
-    ; ; ; padding for matrix M starts 5 rows above M
-    ; ; lea r10, [5*FLOAT_BYTES]
-    ; ; sub rdx, r10
-    ; mov [TP], rdx
-    ; ; ; physical height is 4 rows higher than logical (user-facing one)
-    ; ; add rsi, 4
-    ; mov [height], esi
-    ; ; ; actual height is the nearest number > height that is divisible by 4
-    ; ; ; NOTE: using number >height, not >=height, to make calculation simpler
-    ; ; mov rcx, rsi ; rsi = [0000|esi]
-    ; ; shr ecx, 2 ; TODO: validate the number is positive in C (otherwise it doesn't work)
-    ; ; inc ecx
-    ; ; shl ecx, 2
-    ; ; mov [height], ecx
-    ; ; offset necessary to next column is (height + padding)*FLOAT_BYTES
-    ; mov r8, rsi
-    ; add r8, 6
-    ; lea r8, [FLOAT_BYTES*r8]
-    ; mov [next_col_offset], r8
-    ; ; start of padding for TP is positioned one column offset before start of padding for M
-    ; mov r9, rdx
-    ; sub r9, r8
-    ; mov [TP], r9
-    ; ; start of padding for DELTA is positioned after end of M (with all its padding)
-    ; mov rax, r8
-    ; mul rdi ; TODO: Ensure all arguments are >=0 in C to use mul ; TODO: This assumes no overflow
-    ; mov [DELTA], rax
 
 ; epilogue
     pop rbp
@@ -84,6 +61,7 @@ step:
 ; prologue
     push rbp
     mov rbp, rsp
+
 ; body - arguments - rdi: float* T
     ; load weights to memory
     xorps xmm0, xmm0
@@ -106,52 +84,38 @@ step:
 
     ; calculate deltas
     mov rsi, [TP]
-    ; lea rsi, [rsi + FLOAT_BYTES] ; row0 in left col (src)
     mov r9, [M]
-    ; lea r9, [r9 + FLOAT_BYTES] ; row0 in current col (src)
     mov r10, [DELTA]
-    ; lea r10, [r10 + FLOAT_BYTES] ; row0 in current col (dest)
     xor r13, r13
     mov r13d, [height]
     add r13, PAD_TOP ; row size for resetting inner loop
     mov rcx, r13 ; row counter (inner loop)
     xor rax, rax
-    mov eax, [width] ; column counter (outer loop)
+    mov eax, [width]
     mov r8, [next_col_offset]
     mov r12, 0ffffffff00000000h ; first rows flag for the mask
 .calculate_next_rows: ; rsi: left column (source), r9: current column (source), r10: current column (dest)
     sub rcx, 4
-    ; ; copy weights in preparation for applying masks to them in the next step:
-    ; movaps xmm1, xmm0
-    ; movaps xmm2, xmm0
-    ; movaps xmm3, xmm0
     ; set mask that affects weight application based on number of remaining rows:
-    cmp rcx, 4
+    cmp rcx, ROWS_4
     jg .set_masks_standard
-    cmp rcx, 3
+    cmp rcx, ROWS_3
     jg .set_masks_4
-    cmp rcx, 2
+    cmp rcx, ROWS_2
     jg .set_masks_3
-    cmp rcx, 1
+    cmp rcx, ROWS_1
     jg .set_masks_2
-    test rcx, rcx
+    cmp rcx, ROWS_0
     je .calculate_next_column ; 0 rows remaining - nothing left to do
-    ; only 1 row remaining:
-    ; andps xmm1, ff000000h ; xmm1 := [weight, 0, 0, 0] - weighted mask0
-    ; andps xmm2, 0 ; xmm2 := [0, 0, 0, 0] - weighted mask+1
-    ; andps xmm3, ffff0000h ; xmm3 := [weight, weight, 0, 0] - weighted mask-1
+    ; TODO: handle case with 1 remaining row !!!
     jmp .calculate_deltas
 .set_masks_2: ; 2 rows remaining:
-    ; andps xmm1, ffff0000h ; xmm1 := [weight, weight, 0, 0] - weighted mask0
-    ; andps xmm2, ff000000h ; xmm2 := [weight, 0, 0, 0] - weighted mask+1
-    ; andps xmm3, ffffff00h ; xmm3 := [weight, weight, weight, 0] - weighted mask-1
+    ; TODO: handle case with 2 remaining rows !!!
     jmp .calculate_deltas
 .set_masks_3: ; 3 rows remaining:
-    ; andps xmm1, ffffff00h ; xmm1 := [weight, weight, weight, 0] - weighted mask0
-    ; andps xmm2, ffff0000h ; xmm2 := [weight, weight, 0, 0] - weighted mask+1
-    ; ; xmm3 := [weight, weight, weight, weight] - weighted mask-1
+    ; TODO: handle case with 3 remaining rows !!!
     jmp .calculate_deltas
-.set_masks_4: ; TODO: 4 rows remaining:
+.set_masks_4:
     xorps xmm1, xmm1
     movq xmm1, r12
     mov r12, 0ffffffffffffffffh ; TODO: test if this is actually faster than reading from memory
@@ -167,17 +131,16 @@ step:
     unpcklps xmm3, xmm4
     andps xmm3, xmm0 ; xmm3 := weighted mask-1
     jmp .calculate_deltas
-.set_masks_standard: ; >=4 rows remaining, processing the next 4 rows only:
+.set_masks_standard: ; >4 rows remaining, processing the next 4 rows only:
+    xorps xmm1, xmm1
     movq xmm1, r12
     mov r12, 0ffffffffffffffffh
+    xorps xmm2, xmm2
     movq xmm2, r12
     unpcklps xmm1, xmm2
     andps xmm1, xmm0 ; xmm1 := weighted mask+1
     movaps xmm2, xmm0 ; xmm2 := weighted mask0
     movaps xmm3, xmm0 ; xmm3 := weighted mask-1
-    ; ; xmm1 := [weight, weight, weight, weight] - weighted mask0
-    ; andps xmm2, ffffff00h ; xmm2 := [weight, weight, weight, 0] - weighted mask+1
-    ; andps xmm3, 00ffffffh ; xmm3 := [0, weight, weight, weight] - weighted mask-1 ; TODO: this should be used only in the 1st iteration!!!
 .calculate_deltas: ; xmm1: weighted mask0, xmm2: weighted mask+1, xmm3: weighted mask-1
     ; copy current values to xmm4 (for delta calculation) and xmm5 (where result will be stored):
     lea r11, [r9 + FLOAT_BYTES*rcx]
@@ -194,37 +157,38 @@ step:
     add r11, FLOAT_BYTES ; offset +1
     movups xmm6, [r11] ; xmm6 := rows+1 in left col (src)
     subps xmm6, xmm4
-    mulps xmm6, xmm1 ; xmm6 := (rows+1 in left col - current rows in current col) * weight * mask+1
+    mulps xmm6, xmm3 ; xmm6 := (rows+1 in left col - current rows in current col) * weight * mask+1
     addps xmm5, xmm6 ; new value += top left delta
     ; top delta:
     lea r11, [r9 + FLOAT_BYTES*rcx]
     add r11, FLOAT_BYTES ; offset +1
     movups xmm6, [r11] ; xmm6 := rows+1 in current col (src)
     subps xmm6, xmm4
-    mulps xmm6, xmm1 ; xmm6 := (rows+1 in current col - current rows in current col) * weight * mask+1
+    mulps xmm6, xmm3 ; xmm6 := (rows+1 in current col - current rows in current col) * weight * mask+1
     addps xmm5, xmm6 ; new value += top delta
     ; bottom left delta:
     lea r11, [rsi + FLOAT_BYTES*rcx]
     sub r11, FLOAT_BYTES ; offset -1
     movups xmm6, [r11] ; xmm6 := rows-1 in left col (src)
     subps xmm6, xmm4
-    mulps xmm6, xmm3 ; xmm6 := (rows-1 in left col - current rows in current col) * weight * mask-1
+    mulps xmm6, xmm1 ; xmm6 := (rows-1 in left col - current rows in current col) * weight * mask-1
     addps xmm5, xmm6 ; new value += bottom left delta
     ; bottom delta:
     lea r11, [r9 + FLOAT_BYTES*rcx]
     sub r11, FLOAT_BYTES ; offset -1
     movups xmm6, [r11] ; xmm6 := rows-1 in current col (src)
     subps xmm6, xmm4
-    mulps xmm6, xmm3 ; xmm6 := (rows-1 in current col - current rows in current col) * weight * mask-1
+    mulps xmm6, xmm1 ; xmm6 := (rows-1 in current col - current rows in current col) * weight * mask-1
     addps xmm5, xmm6 ; new value += bottom delta
     ; apply delta:
-    lea r11, [r10 + FLOAT_BYTES*rcx]
+    lea r11, [r10 + FLOAT_BYTES*rcx] ; TODO: works in memory, but not in command line
     movaps [r11], xmm5
     ; reset mask settings for next row:
-    xor r12, r12 ; first rows flag for the mask
+    xor r12, r12
+    dec r12
     ; complete inner loop:
-    test rcx, rcx
-    je .calculate_next_rows
+    cmp rcx, ROWS_4 ; TODO: test this, works but doesn't seem right
+    jg .calculate_next_rows
 .calculate_next_column:
     ; reset mask settings for the bottom row:
     mov r12, 0ffffffff00000000h ; first rows flag for the mask
@@ -237,193 +201,22 @@ step:
     dec eax
     jnz .calculate_next_rows
     ; TODO: apply deltas to M ; r9 should now point to [DELTA]
+    mov r10, [M]
+    xor rax, rax
+    mov eax, [width]
+    ; mov r8, [next_col_offset] ; already loaded
+    mul r8 ; rax := total size of the matrix
+.move_next_batch:
+    dec rax
+    ; copy DELTA to M
+    lea r11, [r9 + FLOAT_BYTES*r8]
+    mov r11, [r11] ; load from DELTA to register
+    lea r12, [r10 + FLOAT_BYTES*r8]
+    mov [r12], r11 ; save to memory (M)
+    ; complete loop
+    test rax, rax
+    jne .move_next_batch
 
 ; epilogue
     pop rbp
     ret
-
-
-
-
-
-
-
-
-; ================================================================
-
-
-; step:
-; ; prologue
-;     push rbp
-;     mov rbp, rsp
-
-; ; body - arguments - rdi: float* T
-;     movd xmm0, [weight]
-;     shufps xmm0, xmm0, 00h  ; xmm0 := [weight, weight, weight, weight]
-
-; ; for column 0, set deltas based on T
-;     mov r11, [M] ; r11 := start of column 0 in M
-;     mov rsi, [DELTA]
-;     mov rcx, [height]  ; rcx := counter for inner loop
-; .setdelta_col0_nextbatch:
-;     sub rcx, 4 ; RANGE TEST
-; ; delta from left neighbour:
-;     lea rdx, [r11 + FLOAT_BYTES*rcx] ; row in column 0 of M
-;     lea r8, [rdi + FLOAT_BYTES*rcx] ; row in T
-;     movaps xmm1, [rdx]
-;     movaps xmm2, [r8]
-;     subps xmm2, xmm1
-;     mulps xmm2, xmm0
-;     movaps xmm3, xmm2 ; xmm3 := delta
-;     test rcx, rcx
-;     je .setdelta_col0_checkbelow
-; ; delta from top left neighbour:
-;     mov r8, rcx
-;     dec r8
-;     lea r8, [rdi + FLOAT_BYTES*r8] ; row-1 in T
-;     movaps xmm2, [r8] ; TODO: macro
-;     subps xmm2, xmm1
-;     mulps xmm2, xmm0
-;     addps xmm3, xmm2
-; ; delta from top neighbour
-;     mov r8, rcx
-;     dec r8
-;     lea r8, [r11 + FLOAT_BYTES*r8] ; row-1 in column 0 of M
-;     movaps xmm2, [r8]
-;     subps xmm2, xmm1
-;     mulps xmm2, xmm0
-;     addps xmm3, xmm2
-; .setdelta_col0_checkbelow: ; TODO: consider unrolling it here (happens only once)
-;     mov r8, rcx
-;     add r8, 4
-;     cmp r8, r10
-;     je .setdelta_col0_applydelta
-; ; delta from bottom left neighbour:
-;     mov r8, rcx
-;     inc r8
-;     lea r8, [rdi + FLOAT_BYTES*r8]
-;     movaps xmm2, [r8] ; TODO: macro
-;     subps xmm2, xmm1
-;     mulps xmm2, xmm0
-;     addps xmm3, xmm2
-; ; delta from bottom neighbour:
-;     mov r8, rcx
-;     inc r8
-;     lea r8, [r11 + FLOAT_BYTES*r8]
-;     movaps xmm2, [r8] ; TODO: macro
-;     subps xmm2, xmm1
-;     mulps xmm2, xmm0
-;     addps xmm3, xmm2
-; .setdelta_col0_applydelta:
-;     ; TODO
-
-
-; ; for each column, set (left column) x (weight) as the delta for current column
-;     mov r11, [M] ; r11 := start of column 0 in M
-;     mov rsi, [DELTA]
-;     mov r10, [height]  ; r10 := height for controlling inner loop
-;     mov rcx, r10  ; rcx := counter for inner loop
-;     lea rsi, [rsi + FLOAT_BYTES*rcx] ; rsi := start of column 1 in DELTA
-;     mov r9, [width]  ; r9 - width for controlling outer loop
-;     dec r9 ; column 0  is an edge case, handled above
-; .setdelta_nextbatch:
-;     sub rcx, 4 ; RANGE TEST
-;     lea rdx, [r11 + FLOAT_BYTES*rcx]  ; rdx := &left_col[rcx] (in M) TODO: make this calculation nicer
-;     lea rdx, [rdx + FLOAT_BYTES*r10]  ; rdx := &current_col[rcx] (in M)
-;     movaps xmm1, [rdx] ; xmm1 := current_col[rcx:rcx+4] (in M)
-; ; always calculate delta from left neighbour:
-;     lea r8, [r11 + FLOAT_BYTES*rcx]  ; r8 := &left_col[rcx] (in M)
-;     movaps xmm2, [r8]  ; xmm2 := left_col[rcx:rcx+4]
-;     subps xmm2, xmm1  ; xmm2 := left_col[rcx:rcx+4] - current_col[rcx:rcx+4]
-;     mulps xmm2, xmm0 ; xmm2 := weight * (left_col[rcx:rcx+4] - current_col[rcx:rcx+4])
-;     movaps xmm3, xmm2 ; xmm3 := delta
-; ; if possible, calculate delta from top and top-left neighbour:
-;     test rcx, rcx
-;     je .setdelta_checkbelow
-;     ; add top-left neighbour:
-;     mov r8, rcx
-;     dec r8
-;     lea r8, [r11 + FLOAT_BYTES*r8]
-;     movaps xmm2, [r8] ; xmm2 := left_col[rcx-1:rcx+3] (in M)
-;     subps xmm2, xmm1
-;     mulps xmm2, xmm0
-;     addps xmm3, xmm2  ; delta += weighted difference vs top left neighbour
-;     ; add top neighbour:
-;     lea r8, [r8 + FLOAT_BYTES*r10]
-;     movaps xmm2, [r8] ; xmm2 := current_col[rcx-1:rcx+3] (in M)
-;     subps xmm2, xmm1
-;     mulps xmm2, xmm0
-;     addps xmm3, xmm2  ; delta += weighted difference vs top neighbour
-; .setdelta_checkbelow:
-;     ; if possible, calculate delta from bottom and bottom-left neighbour:
-;     ; TODO: Check ranges & handle edge cases (loading 3 out of 4 rows) !!!
-;     lea r8, [rcx+4]
-;     cmp r8, r10
-;     je .setdelta_applydelta
-;     ; TODO: define macro for applying delta
-;     ; add bottom-left neighbour:
-;     mov r8, rcx
-;     inc r8
-;     lea r8, [r11 + FLOAT_BYTES*r8]
-;     movaps xmm2, [r8] ; xmm2 := left_col[rcx+1:rcx+5] (in M)
-;     subps xmm2, xmm1
-;     mulps xmm2, xmm0
-;     addps xmm3, xmm2  ; delta += weighted difference vs bottom left neighbour
-;     ; add bottom neighbour:
-;     lea r8, [r8 + FLOAT_BYTES*r10]
-;     movaps xmm2, [r8] ; xmm2 := current_col[rcx+1:rcx+5] (in M)
-;     subps xmm2, xmm1
-;     mulps xmm2, xmm0
-;     addps xmm3, xmm2  ; delta += weighted difference vs bottom neighbour
-;     ; store delta in the temporary matrix DELTA:
-; .setdelta_applydelta:
-;     lea rdx, [rsi + FLOAT_BYTES*rcx]  ; rdx := &current_col[rcx] (in DELTA)
-;     movaps [rdx], xmm3  ; &current_col[rcx:rcx+4] (in DELTA) := delta
-;     ; check if there are more batches in current column:
-;     test rcx, rcx
-;     jne .setdelta_nextbatch  ; process next batch of rows in the same column
-;     ; reset position to start of next column:
-;     mov rcx, r10  ; reset rcx to height of the column
-;     lea rsi, [rsi + FLOAT_BYTES*rcx]  ; rsi - beginning of current column in DELTA
-;     lea r11, [r11 + FLOAT_BYTES*rcx]  ; r11 - begginning of left column in M
-;     dec r9
-;     test r9, r9
-;     jne .setdelta_nextbatch  ; process next column
-
-
-; ; set (T) x (weight) as the delta for column 0 (edge case)
-;     mov r11, [M]
-;     mov rsi, [DELTA]
-;     mov rcx, [height]  ; rcx - inner loop counter (row in column)
-; .setdelta_col0_nextbatch:
-;     sub rcx, 4 ; RANGE TEST
-;     lea rdx, [rsi + FLOAT_BYTES*rcx]  ; rdx := &DELTA[rcx]
-;     lea r8, [rdi + FLOAT_BYTES*rcx]  ; r8 := &T[rcx]
-;     movaps xmm1, [r8]  ; xmm1 := T[rcx:rcx+4]
-;     mulps xmm1, xmm0 ; xmm1 := weight * T[rcx:rcx+4]
-;     movaps [rdx], xmm1  ; &DELTA[rcx:rcx+4] := weight * T[rcx:rcx+4]
-;     test rcx, rcx  ; set ZF=1 if rcx==0
-;     jne .setdelta_col0_nextbatch  ; continue loop if rcx!=0 (ZF==0)
-
-
-; ; apply deltas calculated in DELTA to M
-;     mov rcx, [height]  ; rcx - inner loop counter (row in column)
-;     mov r9, [width]  ; r9 - width for controlling outer loop
-;     imul rcx, r9  ; rcx := height x width
-; .applydelta_nextbatch:
-;     sub rcx, 4 ; RANGE TEST
-;     lea rdx, [rsi + FLOAT_BYTES*rcx]  ; &DELTA[rcx]
-;     lea r8, [r11 + FLOAT_BYTES*rcx]  ; &M[rcx]
-;     movaps xmm0, [rdx]  ; xmm0 := DELTA[rcx:rcx+4]
-;     movaps xmm1, [r8]  ; xmm1 := M[rcx:rcx+4]
-;     addps xmm1, xmm0  ; xmm1 := DELTA[rcx:rcx+4] + M[rcx:rcx+4]
-;     movaps [r8], xmm1  ; &M[rcx:rcx+4] := DELTA[rcx:rcx+4] + M[rcx:rcx+4]
-;     test rcx, rcx
-;     jne .applydelta_nextbatch
-
-; ; at this point, DELTA = weight * M
-
-
-; ; epilogue
-;     pop rbp
-;     ret
