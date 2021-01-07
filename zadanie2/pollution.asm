@@ -110,7 +110,19 @@ step:
     jg .set_masks_2
     cmp rcx, ROWS_0
     je .calculate_next_column ; 0 rows remaining - nothing left to do
-    ; TODO: handle case with 1 remaining row !!!
+    ; 1 row remaining:
+    xorps xmm1, xmm1
+    ror r12, 32
+    and r12, 0ffffffff00000000h
+    movq xmm1, r12 ; xmm1 = 0000 | 1000
+    shufps xmm1, xmm1, 01Bh ; xmm1 = 0010 | 0011
+    andps xmm1, xmm0 ; xmm1 := weighted mask+1
+    xorps xmm2, xmm2
+    mov r12, 000000000ffffffffh
+    movq xmm2, r12 ; xmm2 := 1000
+    shufps xmm2, xmm2, 01Bh ; xmm2 := 0001
+    andps xmm2, xmm0 ; xmm2 := weighted mask0
+    xorps xmm3, xmm3 ; xmm3 := weighted mask-1
     jmp .calculate_deltas
 .set_masks_2: ; 2 rows remaining:
     xorps xmm1, xmm1
