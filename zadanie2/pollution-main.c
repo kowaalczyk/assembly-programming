@@ -53,7 +53,8 @@ void print_pollution_matrix(int width, int height, float* M) {
         for (int col_idx = 0; col_idx < width; col_idx++) {
             int translated_col = (col_idx + PADDING_LEFT) * real_height;
             int translated_row = row_idx + PADDING_TOP;
-            printf("%12.8f ", M[translated_col + translated_row]);
+            printf("%12.8f", M[translated_col + translated_row]);
+            if (col_idx != width - 1) printf(" ");
         }
         printf("\n");
     }
@@ -76,7 +77,8 @@ void debug_print_pollution_matrix(int width, int height, float* M, const char* m
     int real_height = height+PADDING_BOTTOM+PADDING_TOP;
     for (int row_idx = 0; row_idx < real_height; row_idx++) {
         for (int col_idx = 0; col_idx < 2*width + PADDING_LEFT; col_idx++) {
-            printf("%12.8f ", M[real_height * col_idx + row_idx]);
+            printf("%12.8f", M[real_height * col_idx + row_idx]);
+            if (col_idx != 2*width + PADDING_LEFT - 1) printf(" ");
         }
         printf("\n");
     }

@@ -135,11 +135,11 @@ step:
     andps xmm3, xmm0 ; xmm3 := weighted mask-1
     jmp .calculate_deltas
 .set_masks_standard: ; >4 rows remaining, processing the next 4 rows only:
-    xorps xmm1, xmm1
-    movq xmm1, r12
-    mov r12, 0ffffffffffffffffh
     xorps xmm2, xmm2
     movq xmm2, r12
+    mov r12, 0ffffffffffffffffh ; TODO: test if this is actually faster than reading from memory
+    xorps xmm1, xmm1
+    movq xmm1, r12
     unpcklps xmm1, xmm2
     andps xmm1, xmm0 ; xmm1 := weighted mask+1
     movaps xmm2, xmm0 ; xmm2 := weighted mask0
@@ -155,33 +155,33 @@ step:
     subps xmm6, xmm4
     mulps xmm6, xmm2 ; xmm6 := (current rows in left col - current rows in current col) * weight * mask0
     addps xmm5, xmm6 ; new value += left delta
-    ; top left delta:
+    ; bottom left delta:
     lea r11, [rsi + FLOAT_BYTES*rcx]
     add r11, FLOAT_BYTES ; offset +1
     movups xmm6, [r11] ; xmm6 := rows+1 in left col (src)
     subps xmm6, xmm4
-    mulps xmm6, xmm3 ; xmm6 := (rows+1 in left col - current rows in current col) * weight * mask+1
+    mulps xmm6, xmm1 ; xmm6 := (rows+1 in left col - current rows in current col) * weight * mask+1
     addps xmm5, xmm6 ; new value += top left delta
-    ; top delta:
+    ; bottom delta:
     lea r11, [r9 + FLOAT_BYTES*rcx]
     add r11, FLOAT_BYTES ; offset +1
     movups xmm6, [r11] ; xmm6 := rows+1 in current col (src)
     subps xmm6, xmm4
-    mulps xmm6, xmm3 ; xmm6 := (rows+1 in current col - current rows in current col) * weight * mask+1
+    mulps xmm6, xmm1 ; xmm6 := (rows+1 in current col - current rows in current col) * weight * mask+1
     addps xmm5, xmm6 ; new value += top delta
-    ; bottom left delta:
+    ; top left delta:
     lea r11, [rsi + FLOAT_BYTES*rcx]
     sub r11, FLOAT_BYTES ; offset -1
     movups xmm6, [r11] ; xmm6 := rows-1 in left col (src)
     subps xmm6, xmm4
-    mulps xmm6, xmm1 ; xmm6 := (rows-1 in left col - current rows in current col) * weight * mask-1
+    mulps xmm6, xmm3 ; xmm6 := (rows-1 in left col - current rows in current col) * weight * mask-1
     addps xmm5, xmm6 ; new value += bottom left delta
-    ; bottom delta:
+    ; top delta:
     lea r11, [r9 + FLOAT_BYTES*rcx]
     sub r11, FLOAT_BYTES ; offset -1
     movups xmm6, [r11] ; xmm6 := rows-1 in current col (src)
     subps xmm6, xmm4
-    mulps xmm6, xmm1 ; xmm6 := (rows-1 in current col - current rows in current col) * weight * mask-1
+    mulps xmm6, xmm3 ; xmm6 := (rows-1 in current col - current rows in current col) * weight * mask-1
     addps xmm5, xmm6 ; new value += bottom delta
     ; apply delta:
     lea r11, [r10 + FLOAT_BYTES*rcx] ; TODO: works in memory, but not in command line
