@@ -152,3 +152,48 @@ Assignment 2 Q&A:
   we actually don't need to worry about checking)
 - minimal input is 3x3, we don't actually need to check size-related edge cases
   (we can reject such input from user immediately)
+
+
+# Lab 10
+
+Assignment 3 prep:
+- use PPM (text version format), submissions until 29 Jan
+- `quemu` should already work for emulating arm on students
+
+Running quemu:
+- `-M` to choose machine
+- `-kernel` points to linux kernel version
+- `-initrd` chooses image with machine state to be loaded
+- `-hda` chooses hard drive image to be loaded
+- `-net` customizes network options
+
+Practical tips:
+- script `runmenet2.sh` should work with `Bonus: gotowy katalog` link / course website
+- use `halt` command from the root to stop the emulator
+- we use classic arm (language spec version 5), which is 32 bit
+
+Writing arm assembly:
+- keep source in `.s` files
+- `@` starts a line comment
+- labels have to end with a `:`
+- there are 16 registers: `r0`..`r15`, `r15` being the instruction pointer
+- returning from a function:
+  - (a) set return address (which is usually stored in `lr`) to program counter (`r15`)
+  - (b) `bx lr`: exchange program counter with `lr`, this is usually preferred
+- `r0` contains return value
+- `r1`..`r4` contain function arguments
+- assembling a program: `as -o first.o first.s`
+- most instructions have 3 arguments:
+  - first argument is always the destination (unlike x86, we can move values easily)
+  - the only exception is `str` instruction (bc first argument also has to be a register)
+- unlike x86, we have to use `ldr` to load data from memory
+
+Defining memory:
+- by default, we're writing in `section .text`, to define data use `section .data`
+  and keep code in `section .text`
+- use `.balign 4` after each variable to keep memory aligned
+- see example program for details (course website)
+- use `ldr` twice to load defined bytes into memory:
+  - first `lrd r1, .word var1` to translate `var1` into its location above program bytes
+  - second `ldr r1, [r1]` actually loads variable to the register
+- use `str from_register to_address` to store results back to memory
