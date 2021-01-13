@@ -1,0 +1,14 @@
+#!/bin/bash
+
+gcc -c hw2-entry.c -o hw2-entry.o
+
+as hw2-startup.s -o hw2-startup.o
+
+ld -T qemuboot.ld hw2-entry.o hw2-startup.o -o qemuboot.elf
+
+objcopy -O binary qemuboot.elf qemuboot.bin
+
+#arm-none-eabi-objdump -d qemuboot.elf
+
+
+
