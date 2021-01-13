@@ -1,8 +1,8 @@
-# ARM assembly
+# ARM assembly (32bit)
 
 Setup:
 
-1. Install `qemu`
+1. Install `qemu` (`brew install qemu`)
 2. Download files from [course website](https://students.mimuw.edu.pl/~zbyszek/asm/qemu) to the `vm` folder:
    - `debian_lenny_arm_standard.qcow2`
    - `initrd.img-2.6.26-2-versatile`
@@ -49,13 +49,29 @@ ssh-copy-id -p 5555 root@localhost
 # host
 scp -r ./src pwa-arm-dev:~
 ```
-10. **[OPTIONAL]** Copy source files from host to VM:
-
+10. **[OPTIONAL]** Compile & run a simple C program to make sure gcc works:
+```bash
+# vm
+cd ~/src
+gcc -o hello hello.c
+./hello
+# should print something
+```
+11. **[OPTIONAL]** Compile & run a simple assembly program:
+```bash
+# vm
+cd ~/src/examples
+make
+./first
+echo $?
+# should be 2
+```
 
 ## Useful commands
 
 Start VM:
 ```bash
+# host
 qemu-system-arm \
 -M versatilepb \
 -kernel vm/vmlinuz-2.6.26-2-versatile \
@@ -69,8 +85,19 @@ qemu-system-arm \
 
 Copy contents of src folder to the current folder to vm:
 ```bash
+# host
 scp -r ./src pwa-arm-dev:~
 ```
 
+Stop the vm:
+```bash
+# vm
+halt
+```
 
-##
+
+## Example programs
+
+All example programs (in [`src/examples`](src/examples)) are copied from
+the [course website](https://students.mimuw.edu.pl/~zbyszek/asm/progarm) -
+they are not my property and are attached here only for convenience.
