@@ -5,11 +5,11 @@ examples/64/array_sum_sse
 examples/64/quad_roots
 examples/64/dmax
 examples/64/quad_roots_sse
-zadanie1/conway
-zadanie1/conway-test
+assignment1/conway
+assignment1/conway-test
 *.realout
 *.log
 limits
 *.tar.gz
 *.tgz
-zadanie2/pollution
+assignment2/pollution

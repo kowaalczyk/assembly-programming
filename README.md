@@ -1,9 +1,8 @@
-# Programowanie w asemblerze / assembly programming course
+# Assembly programming
 
+Notes from assembly programming course / University of Warsaw 2020-21:
 - [course website](https://students.mimuw.edu.pl/~zbyszek/asm/pl/index.html)
   (all examples are copied from there)
-- Folders `scen1` and `scen2` contain solutions to lab tasks
-- Use NASM manual for all kind of references
 
 
 ## Useful tricks
@@ -46,7 +45,7 @@
   which is the lowest part (in a little-endian systems, so pretty much everywhere)
 
 
-## Lab 4
+### Lab 4
 
 String instructions:
 - advanced nasm tools for efficiently processing strings in loops (basically more optimized code):
@@ -65,12 +64,12 @@ Meta:
 - for all assignments expected tests (written in C) should include all usual edge cases (array start/end, etc.)
 
 
-## Lab 5
+### Lab 5
 
 Missed
 
 
-## Lab 6
+### Lab 6
 
 Compiling C:
 - to NASM text: `gcc -S -masm=intel plik.c`
@@ -79,7 +78,7 @@ Compiling C:
   (usually works better than `readelf` which was made for this purpose)
 
 
-## Lab 7
+### Lab 7
 
 Terminal I/o:
 - Always check errno when read (and related functions) return a negative value
@@ -115,7 +114,7 @@ Modern floating point arithmetic (SSE):
 - SSE3 only adds new operations, and is widely available on Xeon processors
 
 
-## Lab 8
+### Lab 8
 
 FPU programming (to complete previous lab):
 - `DEFAULT REL` - when asm cannot determine whether to use absolute
@@ -141,7 +140,7 @@ SSE programming (modern tech, will likely be used in assignment):
 - intel published sse intrinsics for using these vectorized operations in C++
 
 
-## Lab 9
+### Lab 9
 
 Assignment 2 Q&A:
 - new column that is passsed to `step` is temporary
@@ -154,11 +153,12 @@ Assignment 2 Q&A:
   (we can reject such input from user immediately)
 
 
-# Lab 10
+### Lab 10
 
 Assignment 3 prep:
 - use PPM (text version format), submissions until 29 Jan
-- `quemu` should already work for emulating arm on students
+- `qemu` should already work for emulating arm on students
+- `brew install qemu` works fine on osx
 
 Running quemu:
 - `-M` to choose machine
@@ -171,6 +171,8 @@ Practical tips:
 - script `runmenet2.sh` should work with `Bonus: gotowy katalog` link / course website
 - use `halt` command from the root to stop the emulator
 - we use classic arm (language spec version 5), which is 32 bit
+- using conditional instructions in favour of jumps allows the processor to stream
+  upcoming instructions for faster execution - basically, the less jumps the better
 
 Writing arm assembly:
 - keep source in `.s` files
@@ -178,15 +180,25 @@ Writing arm assembly:
 - labels have to end with a `:`
 - there are 16 registers: `r0`..`r15`, `r15` being the instruction pointer
 - returning from a function:
-  - (a) set return address (which is usually stored in `lr`) to program counter (`r15`)
+  - (a) `mov pc lr` set return address (`lr`) to program counter (`r15` or `pc`)
   - (b) `bx lr`: exchange program counter with `lr`, this is usually preferred
 - `r0` contains return value
-- `r1`..`r4` contain function arguments
+- `r0`..`r4` contain function arguments
 - assembling a program: `as -o first.o first.s`
 - most instructions have 3 arguments:
   - first argument is always the destination (unlike x86, we can move values easily)
   - the only exception is `str` instruction (bc first argument also has to be a register)
-- unlike x86, we have to use `ldr` to load data from memory
+- because first argument has to be a register, there exist instructions
+  like "reverse subtract" (`rsb`, `rsc`)
+- unlike x86, we have to use `ldr` to load data from memory (and `str` to save)
+- we can always shift right parameter left or right using suffixes behind instruction:
+  https://developer.arm.com/documentation/dui0489/h/arm-and-thumb-instructions/shift-operations
+- each instruction:
+  - can set flags (if suffixed with `s`)
+  - can be executed conditionally based on flags (if suggixed with flag name, like `eq`)
+- using flags:
+  - `cmp` always sets flags
+  - while executing instructions that don't set flags, the flags are persisted
 
 Defining memory:
 - by default, we're writing in `section .text`, to define data use `section .data`
@@ -197,3 +209,30 @@ Defining memory:
   - first `lrd r1, .word var1` to translate `var1` into its location above program bytes
   - second `ldr r1, [r1]` actually loads variable to the register
 - use `str from_register to_address` to store results back to memory
+
+
+###  Lab 11
+
+More ARM stuff, focused on getting the vm running locally.
+Seems all useful links are on the course website already:
+[here](https://students.mimuw.edu.pl/~zbyszek/asm/pl/labarm.html)
+and [here](https://students.mimuw.edu.pl/~zbyszek/asm/pl/scenariusz10.txt).
+
+Tips from lecture:
+- use `LDMIA` and `STMDB` for moving multiple registers to/from memory
+- there are 4 ways to use stack with arm asssembly (different instruction sets) -
+  make sure to use the same one as GDB uses on Debian when completing the assignment
+
+Loading constants:
+- all arm instructions are 32bit, so they cannot fit 32bit arguments - this is
+  especially important when dealing with constants and addresses:
+  - all 8bit constants are valid (from `0` to `0xff`)
+  - we can use left and right bit shift suffixes to pass larger arguments
+    (as long as they can be defined by a shift of 8-bit argument)
+  - in all other cases large arguments need to be constructed using more instructions
+  - practically, we can just write down the constant in `.s` source file, if it's
+    impossible to define it assembly will throw compilation errors
+  - we can also use pseudo-instructions (that don't correspond to a single instruction):
+    - `ldr r3,=2137` for integer constants
+    - `vldr.F32 s7,=3.141591` for FPU constants
+    - `adr r3,end` for loading addresses

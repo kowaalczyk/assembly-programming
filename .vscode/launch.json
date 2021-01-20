@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "GDB Zad1",
+            "name": "GDB Assignment 1",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/zadanie1/conway",
+            "program": "${workspaceFolder}/x86/assignment1/conway",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/zadanie1",
+            "cwd": "${workspaceFolder}/x86/assignment1",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -25,13 +25,13 @@
             "miDebuggerPath": "gdb"
         },
         {
-            "name": "GDB Zad2",
+            "name": "GDB Assignment 2",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/zadanie2/pollution",
+            "program": "${workspaceFolder}/x86/assignment2/pollution",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/zadanie2",
+            "cwd": "${workspaceFolder}/x86/assignment2",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
