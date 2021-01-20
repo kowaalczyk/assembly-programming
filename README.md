@@ -236,3 +236,11 @@ Loading constants:
     - `ldr r3,=2137` for integer constants
     - `vldr.F32 s7,=3.141591` for FPU constants
     - `adr r3,end` for loading addresses
+
+
+## Lab 12
+
+Exam info:
+- counts as 1/4 of the points (so the same as each lab assignment)
+- need to get at least 1 point, 12 total points should suffice to get a positive grade
+- it will be a 10-question online test

@@ -121,12 +121,13 @@ step:
     ; 1 row remaining:
     xorps xmm1, xmm1
     ror r12, 32
-    and r12, 0ffffffff00000000h
-    movq xmm1, r12 ; xmm1 = 0000 | 1000
+    movq xmm1, r12 ; xmm1 = 1000 | 1100
     shufps xmm1, xmm1, 01Bh ; xmm1 = 0010 | 0011
     andps xmm1, xmm0 ; xmm1 = weighted mask+1
     xorps xmm2, xmm2
-    mov r12, 000000000ffffffffh
+    xor r12, r12
+    not r12
+    shr r12, 32 ; r12 = 0xffffffff
     movq xmm2, r12 ; xmm2 = 1000
     shufps xmm2, xmm2, 01Bh ; xmm2 = 0001
     andps xmm2, xmm0 ; xmm2 = weighted mask0
@@ -243,7 +244,7 @@ step:
     movups [r11], xmm5
     ; reset mask settings for next row:
     xor r12, r12
-    dec r12
+    not r12
     ; complete inner loop:
     cmp rcx, ROWS_4
     jg .calculate_next_rows
