@@ -89,6 +89,14 @@ Copy contents of src folder to the current folder to vm:
 scp -r ./src pwa-arm-dev:~
 ```
 
+Use `fswatch` + `rsync` to automatically sync all changed files to vm:
+```bash
+# host
+fswatch -r ./src \
+| xargs -I{} realpath --relative-to=$(realpath .) {} \
+| xargs -I{} scp ./{} 'pwa-arm-dev:~/'{}
+```
+
 Stop the vm:
 ```bash
 # vm

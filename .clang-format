@@ -1,0 +1,8 @@
+AlignAfterOpenBracket: Align
+AlignTrailingComments: false
+AllowShortIfStatementsOnASingleLine: true
+BreakBeforeBraces: WebKit
+ColumnLimit: 88
+IndentCaseLabels: true
+IndentWidth: 4
+PointerAlignment: Left
