@@ -10,11 +10,11 @@
 
 void print_usage(const char* executable_name)
 {
-    fprintf(stderr, "Usage: %s -[rgb] brightness_change filename\n", executable_name);
+    fprintf(stderr, "Usage: %s [rgb] adjustment filename\n", executable_name);
     fprintf(stderr, " - use r/g/b option to specify color channel to change\n");
-    fprintf(stderr, " - brightness_change has to be a valid 8-bit integer\n");
-    fprintf(stderr, " - filename must point to a valid PPM file (binary or text)\n\n");
-    fprintf(stderr, "Example: %s -r -128 image.ppm\n\n", executable_name);
+    fprintf(stderr, " - adjustment has to be a valid signed 8-bit integer\n");
+    fprintf(stderr, " - filename must point to a valid PPM file\n\n");
+    fprintf(stderr, "Example: %s r -128 image.ppm\n\n", executable_name);
     exit(2);
 }
 
@@ -25,7 +25,9 @@ void exit_error(const char* msg, uint8_t exit_code)
     exit(exit_code);
 }
 
-typedef enum Color { RED, GREEN, BLUE } Color;
+typedef enum color_t { RED, GREEN, BLUE } color_t;
+
+extern uint32_t adjust_brightness(image_t* image, color_t color, int8_t adjustment);
 
 char* get_output_path(const char* input_path)
 {
@@ -67,8 +69,8 @@ char* get_output_path(const char* input_path)
 
 int main(int argc, char* argv[])
 {
-    Color color;
-    int8_t brightness_change;
+    color_t color;
+    int8_t adjustment;
     image_t image;
 
     if (argc != 4) print_usage(argv[0]);
@@ -91,13 +93,13 @@ int main(int argc, char* argv[])
 
     // second argument
     {
-        int brightness_change_unchecked = atoi(argv[2]);
+        int adjustment_unchecked = atoi(argv[2]);
 
-        if (brightness_change_unchecked < -128 || brightness_change_unchecked > 127) {
+        if (adjustment_unchecked < -128 || adjustment_unchecked > 127) {
             exit_error("Color change has to be an 8-bit integer in range [-128,127]",
                        2);
         }
-        brightness_change = (int8_t)brightness_change_unchecked;
+        adjustment = (int8_t)adjustment_unchecked;
     }
 
     // third argument
@@ -117,7 +119,8 @@ int main(int argc, char* argv[])
             fclose(input_file); // TODO: error handling
         }
 
-        // TODO: running the program
+        uint32_t result = adjust_brightness(&image, color, adjustment);
+        printf("%u\n", result); // TODO
 
         // writing output
         {
@@ -132,5 +135,6 @@ int main(int argc, char* argv[])
 
         free(output_file_path);
     }
+
     return 0;
 }

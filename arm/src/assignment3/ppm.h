@@ -9,8 +9,8 @@ typedef struct {
 } pixel_t;
 
 typedef struct {
-    uint32_t height;
     uint32_t width;
+    uint32_t height;
     uint32_t max_value;
     pixel_t* pixels;
 } image_t;

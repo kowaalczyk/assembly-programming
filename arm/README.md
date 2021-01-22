@@ -8,6 +8,7 @@ Setup:
    - `initrd.img-2.6.26-2-versatile`
    - `vmlinuz-2.6.26-2-versatile`
 3. Start the VM (may take a while, wait until you see root login prompt):
+
 ```bash
 # host
 qemu-system-arm \
@@ -20,16 +21,20 @@ qemu-system-arm \
 -net user,hostfwd=tcp::5555-:22 \
 -nographic
 ```
+
 4. Login using user: `root`, password: `root`
 5. **[OPTIONAL & INSECURE]** This image is very old and can fail to download packages because of expired keys.
    Run the following to disable `apt-get` security key checks:
+
 ```bash
 # vm
 echo 'deb http://archive.debian.org/debian/ lenny allow-insecure=yes main' > /etc/apt/sources.list
 apt-get --allow-unauthenticated upgrade
 ```
+
 6. Create a directory for source files on the VM: `cd ~ && mkdir src`
 7. **[OPTIONAL]** On your local machine, add vm to the ssh config (remember to use tabs in that file):
+
 ```bash
 # host: ~/.ssh/config
 Host pwa-arm-dev
@@ -38,18 +43,24 @@ Host pwa-arm-dev
         User root
         PasswordAuthentication yes
 ```
+
 8. **[OPTIONAL]** Copy public key to the VM to login without password:
+
 ```bash
 # host
 ssh-copy-id -p 5555 root@localhost
 # you'll need to use 'root' password when promped
 ```
+
 9. **[OPTIONAL]** Copy source files from host to VM:
+
 ```bash
 # host
 scp -r ./src pwa-arm-dev:~
 ```
+
 10. **[OPTIONAL]** Compile & run a simple C program to make sure gcc works:
+
 ```bash
 # vm
 cd ~/src
@@ -57,7 +68,9 @@ gcc -o hello hello.c
 ./hello
 # should print something
 ```
+
 11. **[OPTIONAL]** Compile & run a simple assembly program:
+
 ```bash
 # vm
 cd ~/src/examples
@@ -70,6 +83,7 @@ echo $?
 ## Useful commands
 
 Start VM:
+
 ```bash
 # host
 qemu-system-arm \
@@ -84,12 +98,18 @@ qemu-system-arm \
 ```
 
 Copy contents of src folder to the current folder to vm:
+
 ```bash
 # host
-scp -r ./src pwa-arm-dev:~
+tar -cvzf src.tgz src
+scp src.tgz pwa-arm-dev:~
+
+# vm
+tar -xvzf src.tgz
 ```
 
-Use `fswatch` + `rsync` to automatically sync all changed files to vm:
+Use `fswatch` + `scp` to automatically sync all changed files to vm:
+
 ```bash
 # host
 fswatch -r ./src \
@@ -98,11 +118,11 @@ fswatch -r ./src \
 ```
 
 Stop the vm:
+
 ```bash
 # vm
 halt
 ```
-
 
 ## Example programs
 

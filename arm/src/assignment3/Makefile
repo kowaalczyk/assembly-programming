@@ -1,6 +1,6 @@
 all: brightness
 
-brightness: brightness-main.c ppm.o
+brightness: brightness-main.c ppm.o brightness.o
 	gcc -g -o $@ $^
 
 brightness.o: brightness.s
