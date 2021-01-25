@@ -86,7 +86,7 @@ Start VM:
 
 ```bash
 # host
-qemu-system-arm \
+QEMU_AUDIO_DRV=none qemu-system-arm \
 -M versatilepb \
 -kernel vm/vmlinuz-2.6.26-2-versatile \
 -initrd vm/initrd.img-2.6.26-2-versatile \

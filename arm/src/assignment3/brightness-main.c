@@ -27,7 +27,7 @@ void exit_error(const char* msg, uint8_t exit_code)
 
 typedef enum color_t { RED, GREEN, BLUE } color_t;
 
-extern uint32_t adjust_brightness(image_t* image, color_t color, int8_t adjustment);
+extern void adjust_brightness(image_t* image, color_t color, int8_t adjustment);
 
 char* get_output_path(const char* input_path)
 {
@@ -45,7 +45,7 @@ char* get_output_path(const char* input_path)
     // copy prefix of input path (until filename) to output path
     {
         char* output_path_cursor = output_path;
-        char* last_sep = strchr(input_path, '/');
+        char* last_sep = strrchr(input_path, '/');
         if (last_sep == NULL) {
             // path to file in current working directory
             output_path[0] = 'Y'; // update filename
@@ -119,8 +119,7 @@ int main(int argc, char* argv[])
             fclose(input_file); // TODO: error handling
         }
 
-        uint32_t result = adjust_brightness(&image, color, adjustment);
-        printf("%u\n", result); // TODO
+        adjust_brightness(&image, color, adjustment);
 
         // writing output
         {

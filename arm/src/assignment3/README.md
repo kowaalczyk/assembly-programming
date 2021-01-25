@@ -1,6 +1,12 @@
 # Assignment 3
 
-Test images can be downloaded from the [course website](https://students.mimuw.edu.pl/~zbyszek/asm/image/)
+Test images can be downloaded from the [course website](https://students.mimuw.edu.pl/~zbyszek/asm/image/).
+
+### Tests
+
+Apple image used for tests was also copied from the course website.
+In order to correctly clone the repo
+you need to have [`git-lfs`](https://git-lfs.github.com/) installed.
 
 ### Useful resources
 
