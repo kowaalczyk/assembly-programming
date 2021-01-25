@@ -11,3 +11,7 @@ ppm.o: ppm.c ppm.h
 
 clean:
 	rm -vf brightness *.o
+
+# [extra]: run all tests
+test: brightness
+	./test.sh

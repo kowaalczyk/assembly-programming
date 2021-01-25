@@ -1,3 +1,6 @@
+/// Implementation of the PPM i/o library.
+/// (c) Krzysztof Kowalczyk 2020 kk385830@students.mimuw.edu.pl
+
 #include <ctype.h>
 #include <errno.h>
 

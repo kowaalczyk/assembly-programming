@@ -1,18 +1,20 @@
 # Assignment 3
 
-Test images can be downloaded from the [course website](https://students.mimuw.edu.pl/~zbyszek/asm/image/).
+Test images are downloaded from the [course website](https://students.mimuw.edu.pl/~zbyszek/asm/image/).
+
+Use `make` to build the executable, run `./brightness` to see usage instructions.
 
 ### Tests
 
-Apple image used for tests was also copied from the course website.
 In order to correctly clone the repo
 you need to have [`git-lfs`](https://git-lfs.github.com/) installed.
 
-### Useful resources
+Tests can be executed using `make test`.
 
-- PPM library that should be present on most linux systems:
-  - [docs](http://netpbm.sourceforge.net/doc/)
-  - [user guide](http://netpbm.sourceforge.net/doc/libnetpbm_ug.html)
-  - `brew install netpbm` for vscode autocompletion on Mac
-- Stackoverflow thread with C argument parsers:
-  [link](https://stackoverflow.com/questions/9642732/parsing-command-line-arguments-in-c)
+More tests can be generated using [`tests/generate.py`](tests/generate.py)
+script (requires `Python>=3.7`).
+
+### Development
+
+- Couldn't get [netpbm](<(http://netpbm.sourceforge.net/doc/)>) to install
+  or build from source on the VM so I decided to implement a simple library myself

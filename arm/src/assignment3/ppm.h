@@ -1,3 +1,6 @@
+/// A simple PPM i/o library.
+/// (c) Krzysztof Kowalczyk 2020 kk385830@students.mimuw.edu.pl
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

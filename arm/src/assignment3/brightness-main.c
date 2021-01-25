@@ -1,3 +1,6 @@
+/// Main program for changing brightness of a single color in PPM file.
+/// (c) Krzysztof Kowalczyk 2020 kk385830@students.mimuw.edu.pl
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
@@ -27,8 +30,13 @@ void exit_error(const char* msg, uint8_t exit_code)
 
 typedef enum color_t { RED, GREEN, BLUE } color_t;
 
+/// Implemented in brightness.s
 extern void adjust_brightness(image_t* image, color_t color, int8_t adjustment);
 
+/**
+ * Translates input path to output path, by adding prefix 'Y' before filename,
+ * eg. images/input.ppm -> images/Yinput.ppm.
+ */
 char* get_output_path(const char* input_path)
 {
     char* output_path;
@@ -116,7 +124,8 @@ int main(int argc, char* argv[])
             int result = ppm_read(input_file, &image);
             if (result < 0) exit_error("Invalid PPM read", 1);
 
-            fclose(input_file); // TODO: error handling
+            result = fclose(input_file);
+            if (result < 0) exit_error(strerror(errno), 1);
         }
 
         adjust_brightness(&image, color, adjustment);
@@ -129,11 +138,13 @@ int main(int argc, char* argv[])
             int result = ppm_write(output_file, &image);
             if (result < 0) exit_error("Invalid PPM write", 1);
 
-            fclose(output_file); // TODO: error handling
+            result = fclose(output_file);
+            if (result < 0) exit_error(strerror(errno), 1);
         }
 
         free(output_file_path);
     }
 
+    ppm_free(&image);
     return 0;
 }
